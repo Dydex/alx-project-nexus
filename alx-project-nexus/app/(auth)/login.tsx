@@ -66,6 +66,7 @@ export default function Login() {
 
         <TextInput
           style={styles.input}
+          keyboardType="email-address"
           placeholder="Email Address"
           value={email}
           onChangeText={(text) => {
