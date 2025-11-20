@@ -1,9 +1,12 @@
 import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function HomeRootLayout() {
   return (
     <Tabs
       screenOptions={{
+        tabBarActiveTintColor: "#4B2AFA",
+        tabBarInactiveTintColor: "#999",
         headerShown: false,
       }}
     >
@@ -11,20 +14,39 @@ export default function HomeRootLayout() {
         name="index"
         options={{
           title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
         }}
       />
 
       <Tabs.Screen
-        name="results"
+        name="chart"
         options={{
-          title: "Home",
+          title: "Chart",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="analytics-outline" size={size} color={color} />
+          ),
         }}
       />
 
       <Tabs.Screen
-        name="index"
+        name="new"
         options={{
-          title: "Home",
+          title: "New",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="add-circle" size={50} color={color} />
+          ),
+          tabBarLabel: "",
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
+          ),
         }}
       />
     </Tabs>

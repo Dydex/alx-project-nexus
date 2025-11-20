@@ -5,3 +5,13 @@ export interface ButtonProps {
   color: string;
   borderColor?: string;
 }
+
+export interface PillProps {
+  title: string;
+  onPress?: () => void;
+  bg: string;
+  borderColor: string;
+  borderRadius: number;
+  color: string;
+  icon: React.ReactNode;
+}
