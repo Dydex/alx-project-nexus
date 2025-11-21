@@ -9,9 +9,9 @@ export interface ButtonProps {
 export interface PillProps {
   title: string;
   onPress?: () => void;
-  bg: string;
   borderColor: string;
   borderRadius: number;
   color: string;
   icon: React.ReactNode;
+  selected?: boolean;
 }

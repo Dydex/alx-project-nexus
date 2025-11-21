@@ -4,17 +4,17 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 export default function Pill({
   title,
   onPress,
-  bg,
   borderColor,
   borderRadius,
   color,
   icon,
+  selected,
 }: PillProps) {
   return (
     <TouchableOpacity
       style={[
         styles.pill,
-        { backgroundColor: bg },
+        { backgroundColor: selected ? "#4B2AFA" : "#FFF" },
         borderColor && { borderColor: borderColor, borderWidth: 1 },
         { borderRadius: borderRadius },
       ]}

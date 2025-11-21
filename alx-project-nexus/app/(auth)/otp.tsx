@@ -71,7 +71,7 @@ export default function OTP() {
             bg="#4B2AFA"
             color="white"
             onPress={() => {
-              router.push("/(home)/index");
+              router.push("/(home)");
             }}
           />
         </View>
