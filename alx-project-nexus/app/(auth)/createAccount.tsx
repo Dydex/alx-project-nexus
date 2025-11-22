@@ -9,14 +9,13 @@ import {
 import Button from "@/components/common/Button";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function CreateAccountPage() {
   // Global state for mail
   const { setEmail: setGlobalEmail } = useAuth();
 
-  const phoneInput = useRef(null);
   const [value, setValue] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 

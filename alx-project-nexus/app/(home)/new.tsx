@@ -13,12 +13,51 @@ import Pill from "@/components/common/Pill";
 import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useDispatch } from "react-redux";
+import { addPoll } from "@/store/pollSlice";
 
 export default function NewPage() {
-  const [activeFilter, setActiveFilter] = useState("All");
+  const dispatch = useDispatch();
 
-  // Dropdown menu
+  const [question, setQuestion] = useState("");
+
+  const [categories, setCategories] = useState("");
+
+  // TImeframe menu
   const [timeFrame, setTimeFrame] = useState("");
+
+  // Adding Extra TextInput
+  const [options, setOptions] = useState<string[]>(["", ""]);
+
+  const isQuestionValid = question.trim().length > 0;
+  const isCategoryValid = categories.trim().length > 0;
+  const isTimeFrameValid = timeFrame.trim().length > 0;
+  const areOptionsValid =
+    options.length >= 2 && !options.some((opt) => opt.trim() === "");
+
+  const isFormValid =
+    isQuestionValid && isCategoryValid && isTimeFrameValid && areOptionsValid;
+
+  const addInput = () => {
+    if (options.length < 4) {
+      setOptions([...options, ""]);
+    }
+  };
+
+  const removeInput = (index: number) => {
+    if (options.length > 2) {
+      setOptions(options.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleChangeText = (text: string, index: number) => {
+    const newoptions = [...options];
+    newoptions[index] = text;
+    setOptions(newoptions);
+  };
+
+  const [activeButton, setActiveButton] = useState(false);
 
   // Dark and Light Mode
   const scheme = useColorScheme();
@@ -27,9 +66,9 @@ export default function NewPage() {
 
   const styles = createStyles(theme);
 
-  // Pill categories
-  const filters = [
-    { title: "All", icon: null },
+  // Pill Categories
+
+  const Categories = [
     {
       title: "Election",
       icon: <MaterialIcons name="account-balance" size={20} color="black" />,
@@ -44,6 +83,25 @@ export default function NewPage() {
     },
   ];
 
+  const handlePostPoll = async () => {
+    if (!categories || !options || !question || options.length < 2) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    const newPoll = {
+      question,
+      category: categories,
+      timeFrame,
+      options: options.filter((opt) => opt.trim() !== ""),
+      createdAt: new Date().toISOString(),
+    };
+
+    dispatch(addPoll(newPoll));
+    router.push("/(home)");
+  };
+  // Post Object
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.createPollDiv}>
@@ -53,14 +111,14 @@ export default function NewPage() {
         <Text style={styles.categoryText}> Category</Text>
       </View>
       <View style={styles.pillDiv}>
-        {filters.map((filter, i) => (
+        {Categories.map((filter, i) => (
           <Pill
             key={i}
             icon={filter.icon}
             title={filter.title}
             color="black"
-            selected={activeFilter === filter.title}
-            onPress={() => setActiveFilter(filter.title)}
+            selected={categories === filter.title}
+            onPress={() => setCategories(filter.title)}
             borderColor="#ccc"
             borderRadius={10}
           />
@@ -71,48 +129,86 @@ export default function NewPage() {
         style={styles.questionInput}
         multiline={true}
         placeholder="Who is the best actor of all time?"
+        onChangeText={(question) => setQuestion(question)}
       />
+      {!isQuestionValid && (
+        <Text style={styles.errorText}> Question is required </Text>
+      )}
+
       <View>
         <Text style={styles.addOptionText}>Add Options</Text>
-        <TextInput style={styles.optionInput} placeholder="Option 1" />
-        <TextInput style={styles.optionInput} placeholder="Option 2" />
+
+        {options.map((value, index) => (
+          <View key={index}>
+            <TextInput
+              style={styles.optionInput}
+              value={value}
+              placeholder={`Option ${index + 1}`}
+              onChangeText={(text) => handleChangeText(text, index)}
+            />
+          </View>
+        ))}
+        {options.some((opt) => opt.trim() === "") && (
+          <Text style={styles.errorOptionText}>Option cannot be empty</Text>
+        )}
 
         <View style={styles.addAnotherOptionDiv}>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={addInput}>
             <Text style={styles.addAnotherOptionText}>
               + Add Another option
             </Text>
           </TouchableOpacity>
+
+          {options.length > 2 && (
+            <TouchableOpacity
+              style={styles.removeOtionDiv}
+              onPress={() => removeInput(options.length - 1)}
+            >
+              <Text style={styles.removeOptionText}>- Remove Option</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
-      <View style={styles.pollDiv}>
-        <View style={styles.pollTextDiv}>
-          <Ionicons name="timer-outline" size={24} />
-          <Text>Poll ends in</Text>
-        </View>
+      <View style={styles.postPollDiv}>
+        <View style={styles.pollDiv}>
+          <View style={styles.pollTextDiv}>
+            <Ionicons name="timer-outline" size={24} color={theme.text} />
+            <Text style={styles.pollText}>Poll ends in</Text>
+          </View>
 
-        <View style={styles.pickerDiv}>
-          <Picker
-            selectedValue={timeFrame}
-            onValueChange={(itemValue) => setTimeFrame(itemValue)}
+          <View style={styles.pickerDiv}>
+            <Picker
+              selectedValue={timeFrame}
+              onValueChange={(itemValue) => setTimeFrame(itemValue)}
+            >
+              <Picker.Item label="Never Ends" value="never" />
+              <Picker.Item label="30 mins" value="30m" />
+              <Picker.Item label="1 hour" value="1h" />
+              <Picker.Item label="6 hours" value="6h" />
+              <Picker.Item label="12 hours" value="12h" />
+              <Picker.Item label="24 hours" value="24h" />
+            </Picker>
+          </View>
+        </View>
+        <View style={styles.buttons}>
+          <TouchableOpacity
+            style={[
+              styles.button,
+              { backgroundColor: activeButton ? "#fff" : "blue" },
+            ]}
+            onPress={() => setActiveButton(!activeButton)}
           >
-            <Picker.Item label="Never Ends" value="never" />
-            <Picker.Item label="30 mins" value="30m" />
-            <Picker.Item label="1 hour" value="1h" />
-            <Picker.Item label="6 hours" value="6h" />
-            <Picker.Item label="12 hours" value="12h" />
-            <Picker.Item label="24 hours" value="24h" />
-          </Picker>
+            <Text>Preview</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            disabled={!isFormValid}
+            onPress={handlePostPoll}
+          >
+            <Text>Post Poll</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-      <View style={styles.buttons}>
-        <TouchableOpacity style={styles.button}>
-          <Text>Preview</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
-          <Text>Post Poll</Text>
-        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -179,10 +275,17 @@ const createStyles = (theme: any) =>
     addAnotherOptionText: {
       color: theme.text,
     },
+    removeOtionDiv: {
+      marginTop: 14,
+    },
+
+    removeOptionText: {
+      color: theme.text,
+    },
     addAnotherOptionDiv: {
       alignItems: "flex-end",
-      marginTop: 20,
-      marginBottom: 170,
+      marginTop: 10,
+      marginBottom: 10,
     },
     pickerDiv: {
       justifyContent: "center",
@@ -199,6 +302,9 @@ const createStyles = (theme: any) =>
       alignItems: "center",
       gap: 6,
     },
+    pollText: {
+      color: theme.text,
+    },
     button: {
       borderRadius: 8,
       alignItems: "center",
@@ -211,6 +317,21 @@ const createStyles = (theme: any) =>
     buttons: {
       flexDirection: "row",
       gap: 8,
-      marginTop: 40,
+      marginTop: 30,
+    },
+    postPollDiv: {
+      flexDirection: "column",
+      justifyContent: "flex-end",
+      flex: 1,
+      marginBottom: 30,
+    },
+    errorText: {
+      color: "red",
+      fontSize: 12,
+      marginBottom: 10,
+    },
+    errorOptionText: {
+      color: "red",
+      fontSize: 12,
     },
   });

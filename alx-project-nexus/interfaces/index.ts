@@ -15,3 +15,14 @@ export interface PillProps {
   icon: React.ReactNode;
   selected?: boolean;
 }
+
+export interface Poll {
+  question: string;
+  category: string;
+  timeFrame: string;
+  options: string[];
+}
+
+export interface PollState {
+  polls: Poll[];
+}
