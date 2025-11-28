@@ -2,11 +2,59 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import Button from "@/components/common/Button";
 import { router } from "expo-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { TextInput } from "react-native-gesture-handler";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 export default function OTP() {
+  const [timer, setTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+
+  useEffect(() => {
+    let interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev === 1) {
+          setCanResend(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleResend = async () => {
+    if (!canResend) return;
+
+    const { error } = await supabase.auth.signInWithOtp({ email });
+
+    if (error) {
+      setError("Could not resend code");
+      return;
+    }
+
+    // Restart countdown
+    setTimer(60);
+    setCanResend(false);
+
+    // restart timer again
+    let interval = setInterval(() => {
+      setTimer((prev) => {
+        if (prev === 1) {
+          setCanResend(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const [error, setError] = useState("");
+
   const { email } = useAuth();
 
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
@@ -40,6 +88,22 @@ export default function OTP() {
     }
   };
 
+  const handleVerify = async () => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: otp.join(""),
+      type: "email",
+    });
+
+    if (error) {
+      setError("Invalid OTP");
+      return;
+    } else {
+      console.log("success:", data);
+    }
+
+    router.push("/(home)");
+  };
   return (
     <SafeAreaView style={styles.container}>
       <TouchableOpacity onPress={() => router.back()}>
@@ -65,21 +129,26 @@ export default function OTP() {
             />
           ))}
         </View>
+        <View style={styles.errorDiv}>
+          {error && <Text style={styles.errorText}> {error} </Text>}
+        </View>
+
         <View style={styles.containerThree}>
           <Button
             title="Verify"
             bg="#4B2AFA"
             color="white"
-            onPress={() => {
-              router.push("/(home)");
-            }}
+            onPress={handleVerify}
           />
         </View>
         <View style={styles.containerFour}>
-          <Text>
-            Didn't receive the code? <Text style={styles.resend}>Resend</Text>{" "}
-          </Text>
-          <Text style={styles.request}>request the new code in 30 seconds</Text>
+          {canResend ? (
+            <TouchableOpacity onPress={handleResend}>
+              <Text style={styles.resend}>Resend Code</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.request}>Request a new code in {timer}s</Text>
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -130,9 +199,15 @@ const styles = StyleSheet.create({
     color: "#4B2AFA",
   },
   request: {
-    color: "#ccc",
+    color: "black",
   },
   mailText: {
     color: "#4B2AFA",
+  },
+  errorDiv: {
+    alignItems: "center",
+  },
+  errorText: {
+    color: "red",
   },
 });

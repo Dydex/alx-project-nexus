@@ -21,7 +21,7 @@ export default function HomeRootLayout() {
       />
 
       <Tabs.Screen
-        name="chart"
+        name="chart/[id]"
         options={{
           title: "Chart",
           tabBarIcon: ({ color, size }) => (

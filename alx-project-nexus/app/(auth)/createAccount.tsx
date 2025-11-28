@@ -11,19 +11,20 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "../../lib/supabase";
 
 export default function CreateAccountPage() {
   // Global state for mail
-  const { setEmail: setGlobalEmail } = useAuth();
+  const { setEmail: setGlobalEmail, setSignUpData } = useAuth();
 
   const [value, setValue] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
+  const [loading, setLoading] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [error, setError] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
@@ -66,10 +67,29 @@ export default function CreateAccountPage() {
     !passwordError &&
     !confirmPasswordError;
 
-  const handleCreateAccount = () => {
+  const handleCreateAccount = async () => {
     if (!isFormValid) return;
+
+    setLoading(true);
+
+    setSignUpData({
+      firstName,
+      lastName,
+      email,
+      password,
+    });
+
+    const { error } = await supabase.auth.signInWithOtp({ email });
+
+    setLoading(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
     setGlobalEmail(email);
-    console.log("hi");
+
     router.push("/(auth)/otp");
   };
 
@@ -181,3 +201,11 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
+function setSignUpData(arg0: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}) {
+  throw new Error("Function not implemented.");
+}

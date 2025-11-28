@@ -17,10 +17,13 @@ export interface PillProps {
 }
 
 export interface Poll {
+  id: string;
   question: string;
   category: string;
   timeFrame: string;
-  options: string[];
+  expiresIn: number;
+  createdAt: number;
+  options: { text: string; votes: number }[];
 }
 
 export interface PollState {

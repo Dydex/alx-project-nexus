@@ -11,8 +11,11 @@ import { LightTheme, DarkTheme } from "@/theme/theme";
 import Button from "@/components/common/Button";
 import { useState } from "react";
 import { router } from "expo-router";
+import { supabase } from "@/lib/supabase";
 
 export default function Login() {
+  const [error, setError] = useState("");
+
   // Validation
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,9 +45,19 @@ export default function Login() {
 
   const isFormValid = email && password && !emailError && !passwordError;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!isFormValid) return;
-    router.push("/(home)/home");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    router.push("/(home)");
   };
 
   // Dark || Light mode
@@ -89,6 +102,8 @@ export default function Login() {
         {passwordError ? (
           <Text style={styles.error}>{passwordError}</Text>
         ) : null}
+
+        <Text style={styles.errorText}>{error}</Text>
 
         <View style={styles.passwordTextDiv}>
           <Text style={styles.passwordText}>Forgot a password?</Text>
@@ -167,5 +182,8 @@ const createStyles = (theme: any) =>
       color: "red",
       fontSize: 12,
       marginTop: 4,
+    },
+    errorText: {
+      color: "red",
     },
   });

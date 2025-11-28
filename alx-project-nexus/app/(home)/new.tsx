@@ -93,7 +93,9 @@ export default function NewPage() {
       question,
       category: categories,
       timeFrame,
-      options: options.filter((opt) => opt.trim() !== ""),
+      options: options
+        .filter((opt) => opt.trim() !== "")
+        .map((opt) => ({ text: opt, votes: 0 })),
       createdAt: new Date().toISOString(),
     };
 
@@ -182,12 +184,13 @@ export default function NewPage() {
               selectedValue={timeFrame}
               onValueChange={(itemValue) => setTimeFrame(itemValue)}
             >
-              <Picker.Item label="Never Ends" value="never" />
-              <Picker.Item label="30 mins" value="30m" />
-              <Picker.Item label="1 hour" value="1h" />
-              <Picker.Item label="6 hours" value="6h" />
-              <Picker.Item label="12 hours" value="12h" />
-              <Picker.Item label="24 hours" value="24h" />
+              {/* <Picker.Item label="Never Ends" value="never" /> */}
+              <Picker.Item label="1 hour" value="1 hour" />
+              <Picker.Item label="6 hours" value="6 hours" />
+
+              <Picker.Item label="12 hours" value="12 hours" />
+              <Picker.Item label="24 hours" value="24 hours" />
+              <Picker.Item label="3 days" value="3 days" />
             </Picker>
           </View>
         </View>

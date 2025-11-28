@@ -12,11 +12,31 @@ import Pill from "@/components/common/Pill";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { LightTheme, DarkTheme } from "@/theme/theme";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
+import { removeExpiredPolls } from "@/store/pollSlice";
+import { useEffect } from "react";
+import { router } from "expo-router";
+import { Poll } from "@/interfaces";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Home() {
+  const dispatch = useDispatch();
   const polls = useSelector((state: RootState) => state.poll.polls);
+
+  const getTimeRemaining = (poll: Poll) => {
+    const end = poll.createdAt + poll.expiresIn;
+    console.log("createdat:", poll.createdAt, "expiresIn:", poll.expiresIn);
+    const diff = end - Date.now();
+    if (diff <= 0) return "Expired";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return hours > 0 ? `${hours}h ${minutes}m left` : `${minutes}m left`;
+  };
+
+  useEffect(() => {
+    dispatch(removeExpiredPolls());
+  }, []);
 
   // Dark and Light Mode
   const scheme = useColorScheme();
@@ -24,6 +44,8 @@ export default function Home() {
   const theme = scheme === "dark" ? DarkTheme : LightTheme;
 
   const styles = createStyles(theme);
+
+  const [vote, setVote] = useState(false);
 
   const [activeFilter, setActiveFilter] = useState("All");
 
@@ -80,24 +102,38 @@ export default function Home() {
           {filteredPolls.map((poll, index) => (
             <View style={styles.pollContainer} key={index}>
               <Text style={styles.pollQuestion}> {poll.question} </Text>
+              <View style={styles.timerDiv}>
+                <Ionicons name="timer-outline" size={24} color={theme.text} />
+                <Text> {getTimeRemaining(poll)} </Text>
+              </View>
+
               {poll.options.map((opt, i) => (
-                <TouchableOpacity onPress={() => setSelectedIndex(i)}>
-                  <Text
-                    style={[
-                      styles.pollOptions,
-                      {
-                        backgroundColor: selectedIndex === i ? "blue" : "white",
-                      },
-                    ]}
-                    key={i}
-                  >
-                    {" "}
-                    {opt}{" "}
-                  </Text>
-                </TouchableOpacity>
+                <View key={i}>
+                  <TouchableOpacity onPress={() => setSelectedIndex(i)}>
+                    <Text
+                      style={[
+                        styles.pollOptions,
+                        {
+                          backgroundColor:
+                            selectedIndex === i ? "blue" : "white",
+                        },
+                      ]}
+                    >
+                      {" "}
+                      {opt.text}{" "}
+                    </Text>
+                  </TouchableOpacity>
+                  {/* <Text>{opt.votes}</Text> */}
+                </View>
               ))}
 
-              <TouchableOpacity style={styles.voteButton}>
+              <TouchableOpacity
+                onPress={() => setVote(!vote)}
+                style={[
+                  styles.voteButton,
+                  { backgroundColor: vote ? "#fff" : "blue" },
+                ]}
+              >
                 <Text>Vote</Text>
               </TouchableOpacity>
               {/* 
@@ -160,5 +196,9 @@ const createStyles = (theme: any) =>
     },
     voteButton: {
       marginTop: 10,
+    },
+    timerDiv: {
+      flexDirection: "row",
+      alignItems: "center",
     },
   });
