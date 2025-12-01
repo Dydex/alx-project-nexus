@@ -1,55 +1,70 @@
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   useColorScheme,
   ScrollView,
-  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Pill from "@/components/common/Pill";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { LightTheme, DarkTheme } from "@/theme/theme";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState } from "@/store/store";
-import { removeExpiredPolls } from "@/store/pollSlice";
 import { useEffect } from "react";
-import { router } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { Poll } from "@/interfaces";
 import { Ionicons } from "@expo/vector-icons";
+import { supabase } from "@/lib/supabase";
+import PollCard from "@/components/common/PollCard";
 
 export default function Home() {
-  const dispatch = useDispatch();
-  const polls = useSelector((state: RootState) => state.poll.polls);
+  const { refresh } = useLocalSearchParams();
 
-  const getTimeRemaining = (poll: Poll) => {
-    const end = poll.createdAt + poll.expiresIn;
-    console.log("createdat:", poll.createdAt, "expiresIn:", poll.expiresIn);
-    const diff = end - Date.now();
-    if (diff <= 0) return "Expired";
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return hours > 0 ? `${hours}h ${minutes}m left` : `${minutes}m left`;
+  const [lastName, setLastName] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setLastName(user?.user_metadata?.lastName);
+    };
+    fetchUser();
+  }, []);
+
+  const [polls, setPolls] = useState<Poll[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchPolls = async () => {
+    setRefreshing(true);
+    const { data, error } = await supabase
+      .from("polls")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log("Error fetching polls:", error);
+    } else {
+      setPolls(data);
+      setRefreshing(false);
+    }
+
+    setLoading(false);
   };
 
   useEffect(() => {
-    dispatch(removeExpiredPolls());
-  }, []);
+    fetchPolls();
+  }, [refresh]);
 
-  // Dark and Light Mode
+  // Dark/light mode
   const scheme = useColorScheme();
 
   const theme = scheme === "dark" ? DarkTheme : LightTheme;
 
   const styles = createStyles(theme);
 
-  const [vote, setVote] = useState(false);
-
   const [activeFilter, setActiveFilter] = useState("All");
-
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const filters = [
     { title: "All", icon: null },
@@ -58,7 +73,7 @@ export default function Home() {
       icon: <MaterialIcons name="account-balance" size={20} color="black" />,
     },
     {
-      title: "Entertainment",
+      title: "Media",
       icon: <MaterialIcons name="live-tv" size={20} color="black" />,
     },
     {
@@ -74,14 +89,19 @@ export default function Home() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Top profile section – avatar + name */}
       <View style={styles.profileDiv}>
-        <Image source={require("@/assets/images/Ellipse 67.png")} />
+        {/* Default Empty Profile Avatar */}
+        <View style={styles.avatar}>
+          <Ionicons name="person" size={30} color="#888" />
+        </View>
         <View>
-          <Text style={styles.profileText}>Dolapo</Text>
+          <Text style={styles.profileText}>{lastName} </Text>
           <Text style={styles.profileText}>voter</Text>
         </View>
       </View>
 
+      {/* Filter pills (All / Election / Entertainment / Sports) */}
       <View style={styles.pillDiv}>
         {filters.map((filter, i) => (
           <Pill
@@ -97,50 +117,11 @@ export default function Home() {
         ))}
       </View>
 
+      {/* Scrollable list of polls */}
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.containerTwo}>
-          {filteredPolls.map((poll, index) => (
-            <View style={styles.pollContainer} key={index}>
-              <Text style={styles.pollQuestion}> {poll.question} </Text>
-              <View style={styles.timerDiv}>
-                <Ionicons name="timer-outline" size={24} color={theme.text} />
-                <Text> {getTimeRemaining(poll)} </Text>
-              </View>
-
-              {poll.options.map((opt, i) => (
-                <View key={i}>
-                  <TouchableOpacity onPress={() => setSelectedIndex(i)}>
-                    <Text
-                      style={[
-                        styles.pollOptions,
-                        {
-                          backgroundColor:
-                            selectedIndex === i ? "blue" : "white",
-                        },
-                      ]}
-                    >
-                      {" "}
-                      {opt.text}{" "}
-                    </Text>
-                  </TouchableOpacity>
-                  {/* <Text>{opt.votes}</Text> */}
-                </View>
-              ))}
-
-              <TouchableOpacity
-                onPress={() => setVote(!vote)}
-                style={[
-                  styles.voteButton,
-                  { backgroundColor: vote ? "#fff" : "blue" },
-                ]}
-              >
-                <Text>Vote</Text>
-              </TouchableOpacity>
-              {/* 
-            <Text> Timeframe: {poll.timeFrame} </Text> */}
-            </View>
-          ))}
-        </View>
+        {filteredPolls.map((poll, index) => (
+          <PollCard key={poll.id} {...poll} />
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -153,10 +134,21 @@ const createStyles = (theme: any) =>
       padding: 10,
       flex: 1,
     },
+
     containerTwo: {
       marginTop: 20,
-
       flex: 1,
+    },
+    avatar: {
+      width: 60,
+      height: 60,
+      borderRadius: 60,
+      backgroundColor: theme.card || "#f0f0f0",
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
+      borderWidth: 3,
+      borderColor: "#ddd",
     },
     profileDiv: {
       flexDirection: "row",
@@ -175,6 +167,7 @@ const createStyles = (theme: any) =>
       marginTop: 10,
       paddingBottom: 10,
     },
+
     pollContainer: {
       backgroundColor: "#eae1e1ff",
       marginBottom: 10,
@@ -184,7 +177,7 @@ const createStyles = (theme: any) =>
     pollQuestion: {
       color: "black",
       fontSize: 20,
-      fontWeight: 600,
+      fontWeight: "600",
     },
     pollOptions: {
       color: "black",

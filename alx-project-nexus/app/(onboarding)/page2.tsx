@@ -94,7 +94,7 @@ const createStyles = (theme: any) =>
     },
     subText: {
       color: theme.text,
-      fontSize: 18,
+      fontSize: 14,
       marginBottom: 60,
     },
   });

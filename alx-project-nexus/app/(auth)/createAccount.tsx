@@ -79,7 +79,14 @@ export default function CreateAccountPage() {
       password,
     });
 
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        data: {
+          lastName,
+        },
+      },
+    });
 
     setLoading(false);
 
@@ -106,6 +113,7 @@ export default function CreateAccountPage() {
             keyboardType={"email-address"}
             style={styles.input}
             placeholder={"First name"}
+            placeholderTextColor="#b3aeaeff"
             onChangeText={(text) => {
               setFirstName(text);
             }}
@@ -113,6 +121,7 @@ export default function CreateAccountPage() {
           <TextInput
             style={styles.input}
             placeholder="last name"
+            placeholderTextColor="#b3aeaeff"
             onChangeText={(text) => {
               setLastName(text);
             }}
@@ -120,6 +129,7 @@ export default function CreateAccountPage() {
           <TextInput
             style={styles.input}
             placeholder="Email address"
+            placeholderTextColor="#b3aeaeff"
             onChangeText={(text) => {
               setEmail(text);
               validateEmail(text);
@@ -132,6 +142,7 @@ export default function CreateAccountPage() {
           <TextInput
             style={styles.input}
             placeholder="Password"
+            placeholderTextColor="#b3aeaeff"
             onChangeText={(text) => {
               setPassword(text);
               validatePassword(text);
@@ -144,6 +155,7 @@ export default function CreateAccountPage() {
           <TextInput
             style={styles.input}
             placeholder="Repeat Password"
+            placeholderTextColor="#b3aeaeff"
             onChangeText={(text) => {
               setConfirmPassword(text);
               ConfirmValidatePassword(text);
@@ -201,11 +213,3 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
-function setSignUpData(arg0: {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-}) {
-  throw new Error("Function not implemented.");
-}

@@ -76,10 +76,6 @@ export default function OTP() {
     if (text && index < 5) {
       inputs[index + 1].current?.focus();
     }
-
-    // if (newOtp.every((digit) => digit !== "")) {
-    //   console.log("OTP Entered:", newOtp.join(""));
-    // }
   };
 
   const handleKeyPress = (e: any, index: number) => {

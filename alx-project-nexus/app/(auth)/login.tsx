@@ -81,6 +81,7 @@ export default function Login() {
           style={styles.input}
           keyboardType="email-address"
           placeholder="Email Address"
+          placeholderTextColor="#b3aeaeff"
           value={email}
           onChangeText={(text) => {
             setEmail(text);
@@ -92,6 +93,7 @@ export default function Login() {
         <TextInput
           style={styles.passwordInput}
           placeholder="Password"
+          placeholderTextColor="#b3aeaeff"
           secureTextEntry={true}
           value={password}
           onChangeText={(text) => {
@@ -146,7 +148,7 @@ const createStyles = (theme: any) =>
       alignItems: "center",
     },
     mainText: {
-      fontSize: 30,
+      fontSize: 25,
       fontWeight: 600,
     },
     passwordInput: {

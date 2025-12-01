@@ -14,7 +14,7 @@ export default function Pill({
     <TouchableOpacity
       style={[
         styles.pill,
-        { backgroundColor: selected ? "#4B2AFA" : "#FFF" },
+        { backgroundColor: selected ? "#3B82F6" : "#FFF" },
         borderColor && { borderColor: borderColor, borderWidth: 1 },
         { borderRadius: borderRadius },
       ]}

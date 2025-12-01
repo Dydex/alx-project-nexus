@@ -5,8 +5,8 @@ export default function HomeRootLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4B2AFA",
-        tabBarInactiveTintColor: "#999",
+        tabBarActiveTintColor: "#3B82F6",
+        tabBarInactiveTintColor: "black",
         headerShown: false,
       }}
     >
@@ -21,7 +21,7 @@ export default function HomeRootLayout() {
       />
 
       <Tabs.Screen
-        name="chart/[id]"
+        name="results"
         options={{
           title: "Chart",
           tabBarIcon: ({ color, size }) => (
@@ -35,18 +35,7 @@ export default function HomeRootLayout() {
         options={{
           title: "New",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="add-circle" size={50} color={color} />
-          ),
-          tabBarLabel: "",
-        }}
-      />
-
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="notifications-outline" size={size} color={color} />
+            <Ionicons name="add-circle" size={size} color={color} />
           ),
         }}
       />

@@ -29,3 +29,17 @@ export interface Poll {
 export interface PollState {
   polls: Poll[];
 }
+
+export interface SignUpData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+export interface AuthContextProps {
+  email: string;
+  setEmail: (email: string) => void;
+  signUpData: SignUpData;
+  setSignUpData: React.Dispatch<React.SetStateAction<SignUpData>>;
+}

@@ -10,63 +10,41 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LightTheme, DarkTheme } from "@/theme/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 import Pill from "@/components/common/Pill";
-import { Picker } from "@react-native-picker/picker";
 import { useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useDispatch } from "react-redux";
-import { addPoll } from "@/store/pollSlice";
+import { supabase } from "@/lib/supabase";
 
 export default function NewPage() {
-  const dispatch = useDispatch();
-
   const [question, setQuestion] = useState("");
-
   const [categories, setCategories] = useState("");
-
-  // TImeframe menu
-  const [timeFrame, setTimeFrame] = useState("");
-
-  // Adding Extra TextInput
   const [options, setOptions] = useState<string[]>(["", ""]);
+  const [activeButton, setActiveButton] = useState(false);
 
+  // validation
   const isQuestionValid = question.trim().length > 0;
   const isCategoryValid = categories.trim().length > 0;
-  const isTimeFrameValid = timeFrame.trim().length > 0;
   const areOptionsValid =
     options.length >= 2 && !options.some((opt) => opt.trim() === "");
-
-  const isFormValid =
-    isQuestionValid && isCategoryValid && isTimeFrameValid && areOptionsValid;
+  const isFormValid = isQuestionValid && isCategoryValid && areOptionsValid;
 
   const addInput = () => {
-    if (options.length < 4) {
-      setOptions([...options, ""]);
-    }
+    if (options.length < 4) setOptions([...options, ""]);
   };
 
   const removeInput = (index: number) => {
-    if (options.length > 2) {
-      setOptions(options.filter((_, i) => i !== index));
-    }
+    if (options.length > 2) setOptions(options.filter((_, i) => i !== index));
   };
 
   const handleChangeText = (text: string, index: number) => {
-    const newoptions = [...options];
-    newoptions[index] = text;
-    setOptions(newoptions);
+    const newOptions = [...options];
+    newOptions[index] = text;
+    setOptions(newOptions);
   };
 
-  const [activeButton, setActiveButton] = useState(false);
-
-  // Dark and Light Mode
+  // theme
   const scheme = useColorScheme();
-
   const theme = scheme === "dark" ? DarkTheme : LightTheme;
-
   const styles = createStyles(theme);
-
-  // Pill Categories
 
   const Categories = [
     {
@@ -74,7 +52,7 @@ export default function NewPage() {
       icon: <MaterialIcons name="account-balance" size={20} color="black" />,
     },
     {
-      title: "Entertainment",
+      title: "Media",
       icon: <MaterialIcons name="live-tv" size={20} color="black" />,
     },
     {
@@ -84,132 +62,109 @@ export default function NewPage() {
   ];
 
   const handlePostPoll = async () => {
-    if (!categories || !options || !question || options.length < 2) {
-      alert("Please fill all fields");
-      return;
-    }
+    if (!isFormValid) return;
 
     const newPoll = {
       question,
       category: categories,
-      timeFrame,
       options: options
         .filter((opt) => opt.trim() !== "")
         .map((opt) => ({ text: opt, votes: 0 })),
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
 
-    dispatch(addPoll(newPoll));
-    router.push("/(home)");
+    const { error } = await supabase.from("polls").insert([newPoll]);
+
+    if (error) {
+      alert("Something went wrong");
+      return;
+    }
+
+    router.push({ pathname: "/(home)", params: { refresh: Date.now() } });
+
+    // reset form
+    setQuestion("");
+    setCategories("");
+    setOptions(["", ""]);
   };
-  // Post Object
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.createPollDiv}>
-        <Text style={styles.createPollText}> Create a Poll</Text>
+        <Text style={styles.createPollText}>Create a Poll</Text>
       </View>
-      <View>
-        <Text style={styles.categoryText}> Category</Text>
-      </View>
+
+      <Text style={styles.categoryText}>Category</Text>
       <View style={styles.pillDiv}>
-        {Categories.map((filter, i) => (
+        {Categories.map((cat, i) => (
           <Pill
             key={i}
-            icon={filter.icon}
-            title={filter.title}
+            title={cat.title}
+            icon={cat.icon}
             color="black"
-            selected={categories === filter.title}
-            onPress={() => setCategories(filter.title)}
+            selected={categories === cat.title}
+            onPress={() => setCategories(cat.title)}
             borderColor="#ccc"
             borderRadius={10}
           />
         ))}
       </View>
+
       <Text style={styles.questionText}>Question</Text>
       <TextInput
         style={styles.questionInput}
-        multiline={true}
+        multiline
         placeholder="Who is the best actor of all time?"
-        onChangeText={(question) => setQuestion(question)}
+        value={question}
+        onChangeText={setQuestion}
       />
-      {!isQuestionValid && (
-        <Text style={styles.errorText}> Question is required </Text>
-      )}
 
-      <View>
-        <Text style={styles.addOptionText}>Add Options</Text>
+      <Text style={styles.addOptionText}>Add Options</Text>
+      {options.map((_, index) => (
+        <TextInput
+          key={index}
+          style={styles.optionInput}
+          placeholder={`Option ${index + 1}`}
+          value={options[index]}
+          onChangeText={(t) => handleChangeText(t, index)}
+        />
+      ))}
 
-        {options.map((value, index) => (
-          <View key={index}>
-            <TextInput
-              style={styles.optionInput}
-              value={value}
-              placeholder={`Option ${index + 1}`}
-              onChangeText={(text) => handleChangeText(text, index)}
-            />
-          </View>
-        ))}
-        {options.some((opt) => opt.trim() === "") && (
-          <Text style={styles.errorOptionText}>Option cannot be empty</Text>
-        )}
-
-        <View style={styles.addAnotherOptionDiv}>
+      <View style={styles.addAnotherOptionDiv}>
+        {options.length < 4 && (
           <TouchableOpacity onPress={addInput}>
             <Text style={styles.addAnotherOptionText}>
               + Add Another option
             </Text>
           </TouchableOpacity>
-
-          {options.length > 2 && (
-            <TouchableOpacity
-              style={styles.removeOtionDiv}
-              onPress={() => removeInput(options.length - 1)}
-            >
-              <Text style={styles.removeOptionText}>- Remove Option</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        )}
+        {options.length > 2 && (
+          <TouchableOpacity onPress={() => removeInput(options.length - 1)}>
+            <Text style={styles.removeOptionText}>- Remove Option</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.postPollDiv}>
-        <View style={styles.pollDiv}>
-          <View style={styles.pollTextDiv}>
-            <Ionicons name="timer-outline" size={24} color={theme.text} />
-            <Text style={styles.pollText}>Poll ends in</Text>
-          </View>
-
-          <View style={styles.pickerDiv}>
-            <Picker
-              selectedValue={timeFrame}
-              onValueChange={(itemValue) => setTimeFrame(itemValue)}
-            >
-              {/* <Picker.Item label="Never Ends" value="never" /> */}
-              <Picker.Item label="1 hour" value="1 hour" />
-              <Picker.Item label="6 hours" value="6 hours" />
-
-              <Picker.Item label="12 hours" value="12 hours" />
-              <Picker.Item label="24 hours" value="24 hours" />
-              <Picker.Item label="3 days" value="3 days" />
-            </Picker>
-          </View>
-        </View>
         <View style={styles.buttons}>
           <TouchableOpacity
             style={[
               styles.button,
-              { backgroundColor: activeButton ? "#fff" : "blue" },
+              { backgroundColor: activeButton ? "#fff" : "#3B82F6" },
             ]}
             onPress={() => setActiveButton(!activeButton)}
           >
-            <Text>Preview</Text>
+            <Text style={{ color: activeButton ? "#3B82F6" : "#fff" }}>
+              Preview
+            </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={styles.button}
+            style={[styles.button, { opacity: isFormValid ? 1 : 0.5 }]}
             disabled={!isFormValid}
             onPress={handlePostPoll}
           >
-            <Text>Post Poll</Text>
+            <Text style={{ color: "#3B82F6" }}>Post Poll</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -219,122 +174,45 @@ export default function NewPage() {
 
 const createStyles = (theme: any) =>
   StyleSheet.create({
-    container: {
-      padding: 10,
-      flex: 1,
-      backgroundColor: theme.background,
-    },
-    pillDiv: {
-      flexDirection: "row",
-      gap: 10,
-      marginTop: 10,
-    },
-    questionInput: {
-      height: 100,
-      borderWidth: 1,
-      backgroundColor: "#ccc",
-      borderColor: "#ccc",
-      borderRadius: 10,
-      alignItems: "flex-start",
-      paddingHorizontal: 10,
-      paddingVertical: 10,
-      marginTop: 15,
-      marginBottom: 20,
-      textAlignVertical: "top",
-    },
-    createPollText: {
-      color: theme.text,
-      fontSize: 20,
-      fontWeight: 600,
-    },
+    container: { flex: 1, padding: 10, backgroundColor: theme.background },
     createPollDiv: {
       paddingBottom: 10,
       borderBottomWidth: 1,
       borderBottomColor: "#ccc",
     },
-    categoryText: {
-      color: theme.text,
-      fontWeight: 600,
-
-      marginTop: 20,
-    },
-    questionText: {
-      color: theme.text,
-      marginTop: 20,
-      fontWeight: 600,
-    },
-    addOptionText: {
-      color: theme.text,
-      fontWeight: 600,
-      marginBottom: 15,
+    createPollText: { fontSize: 20, fontWeight: "600", color: theme.text },
+    categoryText: { marginTop: 20, fontWeight: "600", color: theme.text },
+    questionText: { marginTop: 20, fontWeight: "600", color: theme.text },
+    addOptionText: { fontWeight: "600", color: theme.text, marginBottom: 15 },
+    pillDiv: { flexDirection: "row", gap: 10, marginTop: 10 },
+    questionInput: {
+      height: 100,
+      backgroundColor: "#ccc",
+      borderRadius: 10,
+      padding: 10,
+      marginTop: 15,
+      marginBottom: 20,
+      textAlignVertical: "top",
     },
     optionInput: {
       height: 50,
-      marginBottom: 10,
       backgroundColor: "#ccc",
       borderRadius: 10,
       paddingHorizontal: 10,
-    },
-    addAnotherOptionText: {
-      color: theme.text,
-    },
-    removeOtionDiv: {
-      marginTop: 14,
-    },
-
-    removeOptionText: {
-      color: theme.text,
-    },
-    addAnotherOptionDiv: {
-      alignItems: "flex-end",
-      marginTop: 10,
       marginBottom: 10,
     },
-    pickerDiv: {
-      justifyContent: "center",
-    },
-    pollDiv: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      paddingTop: 20,
-      borderTopWidth: 1,
-      borderTopColor: "#ccc",
-    },
-    pollTextDiv: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    pollText: {
-      color: theme.text,
-    },
+    addAnotherOptionDiv: { alignItems: "flex-end", marginVertical: 10 },
+    addAnotherOptionText: { color: theme.text },
+    removeOptionText: { color: theme.text, marginTop: 10 },
+    postPollDiv: { flex: 1, justifyContent: "flex-end", marginBottom: 30 },
+    buttons: { flexDirection: "row", gap: 8, marginTop: 30 },
     button: {
+      flex: 1,
+      padding: 12,
       borderRadius: 8,
       alignItems: "center",
-      padding: 12,
-      flex: 1,
       backgroundColor: "#FFF",
       borderWidth: 2,
       borderColor: "#4B2AFA",
-    },
-    buttons: {
-      flexDirection: "row",
-      gap: 8,
-      marginTop: 30,
-    },
-    postPollDiv: {
-      flexDirection: "column",
-      justifyContent: "flex-end",
-      flex: 1,
-      marginBottom: 30,
-    },
-    errorText: {
-      color: "red",
-      fontSize: 12,
-      marginBottom: 10,
-    },
-    errorOptionText: {
-      color: "red",
-      fontSize: 12,
     },
   });

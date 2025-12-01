@@ -1,18 +1,6 @@
 import { createContext, useState, useContext } from "react";
-
-interface SignUpData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-}
-
-interface AuthContextProps {
-  email: string;
-  setEmail: (email: string) => void;
-  signUpData: SignUpData;
-  setSignUpData: React.Dispatch<React.SetStateAction<SignUpData>>;
-}
+import { SignUpData } from "@/interfaces";
+import { AuthContextProps } from "@/interfaces";
 
 const AuthContext = createContext<AuthContextProps | null>(null);
 
